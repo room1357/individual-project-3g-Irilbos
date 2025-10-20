@@ -1,168 +1,90 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart'; // 👈 penting biar bisa dipanggil
+import 'package:uuid/uuid.dart';
+import '../models/user.dart';
+import '../services/user_service.dart';
+import 'login_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // ✅ Buat instance UserService di sini
+  final _userService = UserService();
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // ✅ Panggil registerUser dari UserService
+    final success = await _userService.registerUser(
+      _nameController.text,
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registrasi berhasil! Silakan login.')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email sudah terdaftar.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            onPressed: () {
-              // Handle logout
-            },
-            icon: Icon(Icons.logout),
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: Colors.blue),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Welcome User!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            // 👉 Profile dari drawer
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Profile'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => ProfileScreen(name: " Amiril 2341760171"),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Logout'),
-              onTap: () {
-                // Handle logout
-              },
-            ),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const Text('Daftar Akun')),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Dashboard',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: [
-                  _buildDashboardCard(
-                    context,
-                    'Profile',
-                    Icons.person,
-                    Colors.green,
-                  ),
-                  _buildDashboardCard(
-                    context,
-                    'Messages',
-                    Icons.message,
-                    Colors.orange,
-                  ),
-                  _buildDashboardCard(
-                    context,
-                    'Settings',
-                    Icons.settings,
-                    Colors.purple,
-                  ),
-                  _buildDashboardCard(context, 'Help', Icons.help, Colors.red),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 👇 perbaikan: tambahin context
-  Widget _buildDashboardCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 4,
-      child: InkWell(
-        onTap: () {
-          if (title == "Profile") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProfileScreen(name: "Amiril 2341760171"),
-              ),
-            );
-          }
-          // kalau mau tambahin navigasi untuk menu lain tinggal bikin else if di sini
-        },
-        child: Container(
-          padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 48, color: color),
-              SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+                validator: (v) => v!.isEmpty ? 'Nama tidak boleh kosong' : null,
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                validator: (v) =>
+                    v!.isEmpty ? 'Email tidak boleh kosong' : null,
+              ),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password'),
+                validator: (v) => v!.length < 4 ? 'Minimal 4 karakter' : null,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _register,
+                child: const Text('Daftar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                child: const Text('Sudah punya akun? Login di sini'),
               ),
             ],
           ),

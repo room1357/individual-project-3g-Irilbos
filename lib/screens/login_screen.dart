@@ -1,87 +1,115 @@
 import 'package:flutter/material.dart';
+import 'register_screen.dart';
 import 'home_screen.dart';
+import '../services/user_service.dart'; //
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // ✅ Tambahkan instance service
+  final _userService = UserService();
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final user = await _userService.loginUser(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (user != null) {
+      // ✅ Login berhasil
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Selamat datang, ${user.name}!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      // ⚠️ Login gagal
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email atau password salah!')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login'), backgroundColor: Colors.blue),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person, size: 50, color: Colors.white),
-            ),
-            SizedBox(height: 32),
-
-            // Username Field
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
-              ),
-            ),
-            SizedBox(height: 16),
-
-            // Password Field
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Login Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text(
-                  'LOGIN',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-
-            // Register Link
-            Row(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Don't have an account? "),
+                const Text(
+                  'Expense Manager',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 32),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email wajib diisi';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password wajib diisi';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: const Text('Login'),
+                ),
+                const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
-                    // Navigate to register
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterScreen(),
+                      ),
+                    );
                   },
-                  child: Text('Register'),
+                  child: const Text('Belum punya akun? Daftar'),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
