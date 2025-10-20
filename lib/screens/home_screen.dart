@@ -1,185 +1,156 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
-import 'settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/expense.dart';
+import 'expense_list_screen.dart';
+import 'statistics_screen.dart';
+import 'category_screen.dart';
+import 'login_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final List<Expense> _expenses = [
+    Expense(
+      id: '1',
+      title: 'Makan Siang',
+      amount: 30000,
+      date: DateTime.now(),
+      category: 'Makanan',
+    ),
+    Expense(
+      id: '2',
+      title: 'Transportasi',
+      amount: 15000,
+      date: DateTime.now().subtract(const Duration(days: 1)),
+      category: 'Transport',
+    ),
+  ];
+
+  void _addExpense(Expense expense) {
+    setState(() {
+      _expenses.add(expense);
+    });
+  }
+
+  void _deleteExpense(String id) {
+    setState(() {
+      _expenses.removeWhere((e) => e.id == id);
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
-        backgroundColor: Colors.blue,
+        title: const Text('Expense Manager'),
         actions: [
           IconButton(
-            onPressed: () {
-              // Handle logout
-            },
             icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: _logout,
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.blue),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: Colors.blue),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Welcome User!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            _buildMenuCard(
+              icon: Icons.list,
+              label: 'Daftar Pengeluaran',
+              color: Colors.blue,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ExpenseListScreen(
+                      expenses: _expenses,
+                      onAdd: _addExpense,
+                      onDelete: _deleteExpense,
                     ),
                   ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
+                );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile'),
+            _buildMenuCard(
+              icon: Icons.pie_chart,
+              label: 'Statistik Pengeluaran',
+              color: Colors.green,
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (context) => const ProfileScreen(name: "2341760171"),
+                    builder: (context) => StatisticsScreen(expenses: _expenses),
                   ),
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+            _buildMenuCard(
+              icon: Icons.category,
+              label: 'Kategori',
+              color: Colors.orange,
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
+                    builder: (context) => const CategoryScreen(),
                   ),
                 );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                // Handle logout
               },
             ),
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Dashboard',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(child: DashboardGrid()),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class DashboardGrid extends StatelessWidget {
-  const DashboardGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      children: [
-        _buildDashboardCard(context, 'Profile', Icons.person, Colors.green, () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ProfileScreen(name: "2341760171"),
-            ),
-          );
-        }),
-        _buildDashboardCard(
-          context,
-          'Messages',
-          Icons.message,
-          Colors.orange,
-          () {
-            // nanti bisa ditambahkan halaman Messages
-          },
-        ),
-        _buildDashboardCard(
-          context,
-          'Settings',
-          Icons.settings,
-          Colors.purple,
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            );
-          },
-        ),
-        _buildDashboardCard(context, 'Help', Icons.help, Colors.red, () {
-          // nanti bisa ditambahkan halaman Help
-        }),
-      ],
     );
   }
 
-  static Widget _buildDashboardCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 4,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
+  Widget _buildMenuCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        color: color.withOpacity(0.1),
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 48, color: color),
               const SizedBox(height: 12),
               Text(
-                title,
-                style: const TextStyle(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  color: color,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
